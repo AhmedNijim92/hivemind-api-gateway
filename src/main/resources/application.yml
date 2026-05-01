@@ -1,0 +1,102 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # ── CORS ─────────────────────────────────────────────────────────
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://127.0.0.1:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            exposedHeaders:
+              - Authorization
+            allowCredentials: true
+            maxAge: 3600
+
+      # ── Service discovery ────────────────────────────────────────────
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      # ── Routes ───────────────────────────────────────────────────────
+      routes:
+        - id: auth-service-public
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/sendOtp, /api/v1/auth/signin, /api/v1/auth/createUser
+
+        - id: auth-service-admin
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/createAdmin
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: group-service
+          uri: lb://group-service
+          predicates:
+            - Path=/api/v1/groups/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/api/v1/posts/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: meeting-service
+          uri: lb://meeting-service
+          predicates:
+            - Path=/api/v1/meetings/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: media-service
+          uri: lb://media-service
+          predicates:
+            - Path=/api/v1/media/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: media-download
+          uri: lb://media-service
+          predicates:
+            - Path=/api/v1/media/*/download
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka}
+
+jwt:
+  secret: ${JWT_SECRET:3kRjUdqgxIuZCeEdiX6q7kTsgtOkC75o4D5czNbTV9A=}
