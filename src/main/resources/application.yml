@@ -1,18 +1,21 @@
 server:
   port: 8080
+  # ── Request size limits ──────────────────────────────────────────────
+  max-http-request-header-size: 16KB
 
 spring:
   application:
     name: api-gateway
+  codec:
+    max-in-memory-size: 50MB  # for media uploads
   cloud:
     gateway:
-      # ── CORS ─────────────────────────────────────────────────────────
+      # ── CORS — locked to known origins ───────────────────────────────
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:3000"
-              - "http://127.0.0.1:3000"
+            allowedOriginPatterns:
+              - "${CORS_ALLOWED_ORIGINS:http://localhost:3000}"
             allowedMethods:
               - GET
               - POST
@@ -23,8 +26,20 @@ spring:
             allowedHeaders: "*"
             exposedHeaders:
               - Authorization
+              - X-Request-Id
             allowCredentials: true
             maxAge: 3600
+
+      # ── Default filters — security headers on every response ─────────
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+        - AddResponseHeader=X-Content-Type-Options, nosniff
+        - AddResponseHeader=X-Frame-Options, DENY
+        - AddResponseHeader=X-XSS-Protection, 1; mode=block
+        - AddResponseHeader=Referrer-Policy, strict-origin-when-cross-origin
+        - AddResponseHeader=Permissions-Policy, camera=(), microphone=(), geolocation=()
+        - AddResponseHeader=Cache-Control, no-store
+        - RemoveResponseHeader=Server
 
       # ── Service discovery ────────────────────────────────────────────
       discovery:
@@ -34,11 +49,19 @@ spring:
 
       # ── Routes ───────────────────────────────────────────────────────
       routes:
+        # Public auth routes — no JWT required
         - id: auth-service-public
           uri: lb://auth-service
           predicates:
             - Path=/api/v1/auth/sendOtp, /api/v1/auth/signin, /api/v1/auth/createUser
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
 
+        # Admin auth routes
         - id: auth-service-admin
           uri: lb://auth-service
           predicates:
@@ -46,6 +69,7 @@ spring:
           filters:
             - JwtAuthenticationFilter
 
+        # Protected service routes
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -88,6 +112,7 @@ spring:
           filters:
             - JwtAuthenticationFilter
 
+        # Media download — public (images need to load without auth in <img> tags)
         - id: media-download
           uri: lb://media-service
           predicates:
@@ -100,3 +125,13 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET:3kRjUdqgxIuZCeEdiX6q7kTsgtOkC75o4D5czNbTV9A=}
+
+# ── Actuator — only health exposed, no sensitive data ──────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
