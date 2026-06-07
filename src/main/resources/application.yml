@@ -53,7 +53,7 @@ spring:
         - id: auth-service-public
           uri: lb://auth-service
           predicates:
-            - Path=/api/v1/auth/sendOtp, /api/v1/auth/signin, /api/v1/auth/createUser
+            - Path=/api/v1/auth/sendOtp,/api/v1/auth/signin,/api/v1/auth/createUser
           filters:
             - name: RequestRateLimiter
               args:
@@ -105,18 +105,19 @@ spring:
           filters:
             - JwtAuthenticationFilter
 
+        # Media download — public (images need to load without auth in <img> tags)
+        # MUST be before media-service route so /api/v1/media/*/download is not caught by /**
+        - id: media-download
+          uri: lb://media-service
+          predicates:
+            - Path=/api/v1/media/*/download
+
         - id: media-service
           uri: lb://media-service
           predicates:
             - Path=/api/v1/media/**
           filters:
             - JwtAuthenticationFilter
-
-        # Media download — public (images need to load without auth in <img> tags)
-        - id: media-download
-          uri: lb://media-service
-          predicates:
-            - Path=/api/v1/media/*/download
 
 eureka:
   client:
