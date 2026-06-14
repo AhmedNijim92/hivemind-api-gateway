@@ -98,6 +98,12 @@ spring:
           filters:
             - JwtAuthenticationFilter
 
+        # WebSocket endpoint for real-time chat/meetings
+        - id: meeting-service-ws
+          uri: lb:ws://meeting-service
+          predicates:
+            - Path=/ws/**
+
         - id: notification-service
           uri: lb://notification-service
           predicates:
