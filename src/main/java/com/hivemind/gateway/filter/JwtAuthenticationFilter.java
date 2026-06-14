@@ -53,6 +53,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 ServerHttpRequest modifiedRequest = request.mutate()
                         .header("X-User-Id", claims.getSubject())
                         .header("X-User-Role", claims.get("role", String.class))
+                        .header("X-User-Name", claims.get("name", String.class) != null ? claims.get("name", String.class) : "Unknown")
                         .build();
 
                 return chain.filter(exchange.mutate().request(modifiedRequest).build());
