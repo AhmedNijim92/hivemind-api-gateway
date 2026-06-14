@@ -98,6 +98,14 @@ spring:
           filters:
             - JwtAuthenticationFilter
 
+        # Chat API for real-time messaging (stored in Redis)
+        - id: chat-service
+          uri: lb://meeting-service
+          predicates:
+            - Path=/api/v1/chat/**
+          filters:
+            - JwtAuthenticationFilter
+
         # WebSocket endpoint for real-time chat/meetings
         - id: meeting-service-ws
           uri: lb:ws://meeting-service
