@@ -116,7 +116,7 @@ spring:
 
         # LiveKit WebRTC signaling — proxied through gateway for same-domain access
         - id: livekit-ws
-          uri: lb:ws://livekit-livekit-server
+          uri: ws://livekit-livekit-server.hivemind.svc.cluster.local:80
           predicates:
             - Path=/livekit/**
           filters:
