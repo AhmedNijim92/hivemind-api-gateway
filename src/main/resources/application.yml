@@ -71,7 +71,7 @@ spring:
 
         # Protected service routes
         - id: user-service
-          uri: lb://user-service
+          uri: lb://auth-service
           predicates:
             - Path=/api/v1/users/**
           filters:
@@ -85,7 +85,7 @@ spring:
             - JwtAuthenticationFilter
 
         - id: post-service
-          uri: lb://post-service
+          uri: lb://group-service
           predicates:
             - Path=/api/v1/posts/**
           filters:
