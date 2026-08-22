@@ -118,9 +118,7 @@ spring:
         - id: livekit-ws
           uri: ws://livekit-livekit-server.hivemind.svc.cluster.local:80
           predicates:
-            - Path=/livekit/**
-          filters:
-            - StripPrefix=1
+            - Path=/rtc/**
 
         - id: notification-service
           uri: lb://notification-service
