@@ -114,6 +114,14 @@ spring:
           filters:
             - JwtAuthenticationFilter
 
+        # LiveKit WebRTC signaling — proxied through gateway for same-domain access
+        - id: livekit-ws
+          uri: lb:ws://livekit-livekit-server
+          predicates:
+            - Path=/livekit/**
+          filters:
+            - StripPrefix=1
+
         - id: notification-service
           uri: lb://notification-service
           predicates:
